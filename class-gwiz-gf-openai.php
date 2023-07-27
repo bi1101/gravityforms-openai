@@ -104,6 +104,13 @@ class GWiz_GF_OpenAI extends GFFeedAddOn {
 	 */
 	protected $_async_feed_processing = false;
 
+	/**
+	 * Allow re-ordering of feeds.
+	 *
+	 * @var bool
+	 */
+	protected $_supports_feed_ordering = true;
+
 	public static function get_instance() {
 		if ( self::$instance === null ) {
 			self::$instance = new self;
@@ -143,6 +150,9 @@ class GWiz_GF_OpenAI extends GFFeedAddOn {
 
 		$this->setup_autoload();
 		$this->init_auto_updater();
+
+		add_filter( 'gform_export_form', array( $this, 'export_feeds_with_form' ) );
+		add_action( 'gform_forms_post_import', array( $this, 'import_feeds_with_form' ) );
 	}
 
 	/**
@@ -289,17 +299,17 @@ class GWiz_GF_OpenAI extends GFFeedAddOn {
 				),
 			),
 			'chat/completions' => array(
-				'gpt-3.5-turbo' => array(
-					//'type'        => 'GPT 3.5 Turbo',
+				'gpt-3.5-turbo'     => array(
 					'description' => __( 'The same model used by <a href="https://chat.openai.com" target="_blank">ChatGPT</a>.', 'gravityforms-openai' ),
 				),
-								'gpt-4'         => array(
-					'waitlist'    => 'https://openai.com/waitlist/gpt-4-api',
-					'description' => __( 'More capable than any GPT-3.5 model, able to do more complex tasks, and optimized for chat. Will be updated with the latest model iteration.<br /><br /><a target="_blank" href="https://openai.com/waitlist/gpt-4-api">Join Waitlist</a>', 'gravityforms-openai' ),
+				'gpt-3.5-turbo-16k' => array(
+					'description' => __( 'Same capabilities as the standard gpt-3.5-turbo model but with 4x the context length.', 'gravityforms-openai' ),
 				),
-				'gpt-4-32k'     => array(
-					'description' => __( 'Same capabilities as the base gpt-4 mode but with 4x the context length. Will be updated with the latest model iteration.<br /><br /><a target="_blank" href="https://openai.com/waitlist/gpt-4-api">Join Waitlist</a>', 'gravityforms-openai' ),
-					'waitlist'    => 'https://openai.com/waitlist/gpt-4-api',
+				'gpt-4'             => array(
+					'description' => __( 'More capable than any GPT-3.5 model, able to do more complex tasks, and optimized for chat. Will be updated with the latest model iteration.', 'gravityforms-openai' ),
+				),
+				'gpt-4-32k'         => array(
+					'description' => __( 'Same capabilities as the base gpt-4 mode but with 4x the context length. Will be updated with the latest model iteration.', 'gravityforms-openai' ),
 				),
 			),
 			'edits'            => array(
@@ -1788,5 +1798,53 @@ class GWiz_GF_OpenAI extends GFFeedAddOn {
 		}
 
 		return $headers;
+	}
+
+	/**
+	 * Export OpenAI Add-On feeds when exporting forms.
+	 *
+	 * @param array $form The current form being exported.
+	 *
+	 * @return array
+	 */
+	public function export_feeds_with_form( $form ) {
+		$feeds = $this->get_feeds( $form['id'] );
+
+		if ( ! isset( $form['feeds'] ) ) {
+			$form['feeds'] = array();
+		}
+
+		$form['feeds'][ $this->get_slug() ] = $feeds;
+
+		return $form;
+	}
+
+	/**
+	 * Import OpenAI Add-On feeds when importing forms.
+	 *
+	 * @param array $forms Imported forms.
+	 */
+	public function import_feeds_with_form( $forms ) {
+		foreach ( $forms as $import_form ) {
+			// Ensure the imported form is the latest.
+			$form = GFAPI::get_form( $import_form['id'] );
+
+			if ( ! rgars( $form, 'feeds/' . $this->get_slug() ) ) {
+				continue;
+			}
+
+			foreach ( rgars( $form, 'feeds/' . $this->get_slug() ) as $feed ) {
+				GFAPI::add_feed( $form['id'], $feed['meta'], $this->get_slug() );
+			}
+
+			// Remove feeds from the form array as it's no longer needed.
+			unset( $form['feeds'][ $this->get_slug() ] );
+
+			if ( empty( $form['feeds'] ) ) {
+				unset( $form['feeds'] );
+			}
+
+			GFAPI::update_form( $form );
+		}
 	}
 }
