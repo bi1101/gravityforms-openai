@@ -314,6 +314,12 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 				'gpt-3.5-turbo' => array(
 					'description' => __('The same model used by <a href="https://chat.openai.com" target="_blank">ChatGPT</a>.', 'gravityforms-openai'),
 				),
+				'gpt-4o' => array(
+					'description' => __('High-intelligence flagship model for complex, multi-step tasks.', 'gravityforms-openai'),
+				),
+				'gpt-4o-mini' => array(
+					'description' => __('affordable and intelligent small model for fast, lightweight tasks. GPT-4o mini is cheaper and more capable than GPT-3.5 Turbo.', 'gravityforms-openai'),
+				),
 				'gpt-3.5-turbo-16k' => array(
 					'description' => __('Same capabilities as the standard gpt-3.5-turbo model but with 4x the context length.', 'gravityforms-openai'),
 				),
