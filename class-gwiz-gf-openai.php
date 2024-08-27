@@ -421,8 +421,85 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 	public function plugin_settings_fields()
 	{
 		$fields = array();
+		// Language Tool API Setting Fields
+		$fields[] = array(
+			'title' => 'Language Tool API',
+			'fields' => array(
+				array(
+					'label'   => esc_html__('API Username', 'gravityforms-openai'),
+					'type'    => 'text',
+					'name'    => 'language_tool_username',
+					'tooltip' => esc_html__('The Username for the Language Tool API.', 'gravityforms-openai'),
+					'class'   => 'small',
+				),
+				array(
+					'label'   => esc_html__('API Key', 'gravityforms-openai'),
+					'type'    => 'text',
+					'input_type' => 'password',
+					'name'    => 'language_tool_apiKey',
+					'tooltip' => esc_html__('The API key for the Language Tool API.', 'gravityforms-openai'),
+					'class'   => 'small',
+				),
+				array(
+					'label'   => esc_html__('Base URL', 'gravityforms-openai'),
+					'type'    => 'text',
+					'input_type' => 'url',
+					'name'    => 'language_tool_base_url',
+					'tooltip' => esc_html__('Base URL For The Language Tool.', 'gravityforms-openai'),
+					'class'   => 'small',
+					'default_value' => 'https://api.languagetoolplus.com/v2/check',
+				),
+			),
+		);
 
+		// Pronunciation API
+		$fields[] = array(
+			'title' => 'Pronunciation API',
+			'fields' => array(
+				array(
+					'label'   => esc_html__('Speech Key', 'gravityforms-openai'),
+					'type'    => 'text',
+					'input_type' => 'password',
+					'name'    => 'pronunciation_speech_key',
+					'tooltip' => esc_html__('The Speech API key for the Pronunciation API.', 'gravityforms-openai'),
+					'class'   => 'small',
+				),
+				array(
+					'label'   => esc_html__('Base URL', 'gravityforms-openai'),
+					'type'    => 'text',
+					'input_type' => 'url',
+					'name'    => 'pronunciation_base_url',
+					'tooltip' => esc_html__('Base URL for the Pronunciation API.', 'gravityforms-openai'),
+					'class'   => 'small',
+					'default_value' => 'http://api2.ieltsscience.fun:8080/', // Example default value
+				),
+			),
+		);
+
+		// Google Drive Integration
+		$fields[] = array(
+			'title' => 'Google Drive',
+			'fields' => array(
+				array(
+					'label'   => esc_html__('Google Cloud Console API Key', 'gravityforms-openai'),
+					'type'    => 'text',
+					'input_type' => 'password',
+					'name'    => 'gcloud_console_api_key',
+					'tooltip' => esc_html__('Google API key From Cloud Console.', 'gravityforms-openai'),
+					'class'   => 'small',
+				),
+				array(
+					'label'   => esc_html__('Client ID', 'gravityforms-openai'),
+					'type'    => 'text',
+					'input_type' => 'url',
+					'name'    => 'gcloud_app_client_id',
+					'tooltip' => esc_html__('Client ID of Your Cloud Console Project', 'gravityforms-openai'),
+					'class'   => 'small',
+				),
+			),
+		);
 		for ($i = 1; $i <= 10; $i++) {
+
 			$fields[] = array(
 				'title' => $this->_title . " $i",
 				'fields' => array(
@@ -622,7 +699,11 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 					array('value' => 'edits', 'label' => __('Edits', 'gravityforms-openai'), 'tooltip' => 'openai_endpoint_edits'),
 					array('value' => 'moderations', 'label' => __('Moderations', 'gravityforms-openai'), 'tooltip' => 'openai_endpoint_moderations'),
 					// Add Whisper endpoint choice
-					array('value' => 'whisper', 'label' => __('Whisper (Audio Transcriptions)', 'gravityforms-openai'))
+					array('value' => 'whisper', 'label' => __('Whisper (Audio Transcriptions)', 'gravityforms-openai')),
+					// Language Tool
+					array('value' => 'languagetool', 'label' => __('Language Tool', 'gravityforms-openai')),
+					// Pronunciation API
+					array('value' => 'pronunciation', 'label' => __('Pronunciation API', 'gravityforms-openai'))
 				),
 				'default_value' => 'completions',
 			),
@@ -650,6 +731,124 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 			),
 			$this->feed_setting_map_result_to_field('whisper')
 			// Add other settings as needed
+		);
+
+		// Language Tool Fields
+		$languagetool_fields = array(
+			array(
+				'label'   => esc_html__('Language', 'gravityforms-openai'),
+				'type'    => 'text',
+				'name'    => 'languagetool__language',
+				'tooltip' => esc_html__('The language for the Language Tool API. See https://languagetool.org/http-api/ For Further detail', 'gravityforms-openai'),
+				'class'   => 'small',
+				'default_value' => 'en-US',
+			),
+			array(
+				'label'   => esc_html__('Enabled Only', 'gravityforms-openai'),
+				'type'    => 'radio',
+				'choices' => array(
+					array(
+						'value' => true,
+						'label' => __('Yes', 'gravityforms-openai')
+					),
+					array(
+						'value' => false,
+						'label' => __('No', 'gravityforms-openai')
+					),
+				),
+				'name'    => 'languagetool__enabled_only',
+				'tooltip' => esc_html__('Enable only selected categories for the Language Tool API.', 'gravityforms-openai'),
+				'class'   => 'small',
+				'default_value' => false,
+			),
+			array(
+				'label'   => esc_html__('Level', 'gravityforms-openai'),
+				'type'    => 'text',
+				'name'    => 'languagetool__level',
+				'tooltip' => esc_html__('The level for the Language Tool API. See https://languagetool.org/http-api/ For Further detail', 'gravityforms-openai'),
+				'class'   => 'small',
+				'default_value' => 'picky',
+			),
+			array(
+				'label'   => esc_html__('Disabled Categories', 'gravityforms-openai'),
+				'type'    => 'text',
+				'name'    => 'languagetool__disabled_categories',
+				'tooltip' => esc_html__('Disabled categories for the Language Tool API. See https://languagetool.org/http-api/ For Further detail', 'gravityforms-openai'),
+				'class'   => 'small',
+				'default_value' => 'PUNCTUATION,CASING,TYPOGRAPHY',
+			),
+			array(
+				'name' => 'languagetool_text_source_field',
+				'type' => 'field_select',
+				'label' => __('Text Source Field', 'gravityforms-openai'),
+				'description' => __('Choose Field that will have text to send to Language Tool API', 'gravityforms-openai'),
+			),
+			$this->feed_setting_map_result_to_field('languagetool')
+		);
+
+		// Pronunciation Fields
+		$pronunciation_fields = array(
+			array(
+				'name' => 'pronunciation_grading_system',
+				'tooltip' => 'Select the grading system to use.',
+				'label' => __('Grading System', 'gravityforms-openai'),
+				'type' => 'radio',
+				'choices' => array(
+					array('value' => 'HundredMark', 'label' => __('Hundred Mark', 'gravityforms-openai')),
+					// Add other grading system options as needed
+				),
+				'required' => true,
+				'default_value' => 'HundredMark',
+			),
+			array(
+				'name' => 'pronunciation_granularity',
+				'tooltip' => 'Select the granularity level.',
+				'label' => __('Granularity', 'gravityforms-openai'),
+				'type' => 'radio',
+				'choices' => array(
+					array('value' => 'Phoneme', 'label' => __('Phoneme', 'gravityforms-openai')),
+					// Add other granularity options as needed
+				),
+				'required' => true,
+				'default_value' => 'Phoneme',
+			),
+			array(
+				'name' => 'pronunciation_dimension',
+				'tooltip' => 'Select the dimension type.',
+				'label' => __('Dimension', 'gravityforms-openai'),
+				'type' => 'radio',
+				'choices' => array(
+					array('value' => 'Comprehensive', 'label' => __('Comprehensive', 'gravityforms-openai')),
+					// Add other dimension options as needed
+				),
+				'required' => true,
+				'default_value' => 'Comprehensive',
+			),
+			array(
+				'name' => 'pronunciation_enable_prosody',
+				'tooltip' => 'Enable or disable prosody.',
+				'label' => __('Enable Prosody', 'gravityforms-openai'),
+				'type' => 'radio',
+				'choices' => array(
+					array('value' => true, 'label' => __('Yes', 'gravityforms-openai')),
+					array('value' => false, 'label' => __('No', 'gravityforms-openai')),
+				),
+				'default_value' => true,
+			),
+			array(
+				'name' => 'pronunciation_reference_text_field',
+				'type' => 'field_select',
+				'label' => __('Select Reference Text Field', 'gravityforms-openai'),
+				'description' => __('Choose the text field to use for the reference text.', 'gravityforms-openai'),
+			),
+			array(
+				'name' => 'pronunciation_audio_file_field',
+				'type' => 'field_select',
+				'label' => __('Select Audio File Field', 'gravityforms-openai'),
+				'description' => __('Choose the file upload field to use for the audio file(s).', 'gravityforms-openai'),
+
+			),
+			$this->feed_setting_map_result_to_field('pronunciation'),
 		);
 
 		// Create a new section for API Provider
@@ -765,6 +964,15 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 			array(
 				'title' => 'API Provider',
 				'fields' => $api_provider_fields,
+				'dependency' => array(
+					'live' => true,
+					'fields' => array(
+						array(
+							'field' => 'endpoint',
+							'values' => array('chat/completions', 'completions', 'edits', 'moderations', 'whisper'),
+						),
+					),
+				),
 			),
 			array(
 				'title' => 'Runpod Settings',
@@ -1011,6 +1219,32 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 						array(
 							'field' => 'endpoint',
 							'values' => array('whisper'),
+						),
+					),
+				),
+			),
+			array(
+				'title' => 'Language Tool API Settings',
+				'fields' => $languagetool_fields,
+				'dependency' => array(
+					'live' => true,
+					'fields' => array(
+						array(
+							'field' => 'endpoint',
+							'values' => array('languagetool'),
+						),
+					),
+				),
+			),
+			array(
+				'title' => 'Pronunciation API Settings',
+				'fields' => $pronunciation_fields,
+				'dependency' => array(
+					'live' => true,
+					'fields' => array(
+						array(
+							'field' => 'endpoint',
+							'values' => array('pronunciation'),
 						),
 					),
 				),
@@ -1362,7 +1596,12 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 			case 'whisper':
 				$entry = $this->process_endpoint_whisper($feed, $entry, $form);
 				break;
-
+			case 'languagetool':
+				$entry = $this->process_endpoint_languagetool($feed, $entry, $form);
+				break;
+			case 'pronunciation':
+				$entry = $this->process_endpoint_pronunciation($feed, $entry, $form);
+				break;
 			default:
 				// translators: placeholder is an unknown OpenAI endpoint.
 				$this->add_feed_error(sprintf(__('Unknown endpoint: %s'), $endpoint), $feed, $entry, $form);
@@ -1392,7 +1631,7 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		GFAPI::add_note($entry['id'], 0, 'OpenAI Request (' . $feed['meta']['feed_name'] . ')', sprintf(__('Sent request to OpenAI completions endpoint.', 'gravityforms-openai')));
 
 		// translators: placeholders are the feed name, model, prompt
-		$this->log_debug(__METHOD__ . '(): ' . sprintf(__('Sent request to OpenAI. Feed: %1$s, Endpoint: completions, Model: %2$s, Prompt: %3$s', 'gravityforms-openai'), $feed['meta']['feed_name'], $model, $prompt));
+		// $this->log_debug(__METHOD__ . '(): ' . sprintf(__('Sent request to OpenAI. Feed: %1$s, Endpoint: completions, Model: %2$s, Prompt: %3$s', 'gravityforms-openai'), $feed['meta']['feed_name'], $model, $prompt));
 
 		$response = $this->make_request('completions', array(
 			'prompt' => $prompt,
@@ -1467,7 +1706,7 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		GFAPI::add_note($entry['id'], 0, 'OpenAI Request (' . $feed['meta']['feed_name'] . ')', sprintf(__('Sent request to OpenAI chat/completions endpoint.', 'gravityforms-openai')));
 
 		// translators: placeholders are the feed name, model, prompt
-		$this->log_debug(__METHOD__ . '(): ' . sprintf(__('Sent request to OpenAI. Feed: %1$s, Endpoint: chat, Model: %2$s, Message: %3$s', 'gravityforms-openai'), $feed['meta']['feed_name'], $model, $message));
+		// $this->log_debug(__METHOD__ . '(): ' . sprintf(__('Sent request to OpenAI. Feed: %1$s, Endpoint: chat, Model: %2$s, Message: %3$s', 'gravityforms-openai'), $feed['meta']['feed_name'], $model, $message));
 
 		// Check if the model is GPT-4 Vision and if the image link is not empty
 		if (strpos($model, 'vision') !== false && !empty($image_link)) {
@@ -1544,7 +1783,7 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		GFAPI::add_note($entry['id'], 0, 'OpenAI Request (' . $feed['meta']['feed_name'] . ')', sprintf(__('Sent request to OpenAI edits endpoint.', 'gravityforms-openai')));
 
 		// translators: placeholders are the feed name, model, prompt
-		$this->log_debug(__METHOD__ . '(): ' . sprintf(__('Sent request to OpenAI. Feed: %1$s, Endpoint: edits, Model: %2$s, Input: %3$s, instruction: %4$s', 'gravityforms-openai'), $feed['meta']['feed_name'], $model, $input, $instruction));
+		// $this->log_debug(__METHOD__ . '(): ' . sprintf(__('Sent request to OpenAI. Feed: %1$s, Endpoint: edits, Model: %2$s, Input: %3$s, instruction: %4$s', 'gravityforms-openai'), $feed['meta']['feed_name'], $model, $input, $instruction));
 
 		$response = $this->make_request('edits', array(
 			'input' => $input,
@@ -1590,17 +1829,17 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		$combined_text = '';
 
 		foreach ($file_urls as $file_url) {
-			$this->log_debug("File URL from entry: " . $file_url);
+			// $this->log_debug("File URL from entry: " . $file_url);
 
 			$file_path = $this->convert_url_to_path($file_url);
 
 			if (is_readable($file_path)) {
-				$this->log_debug("File is accessible: " . $file_path);
+				// $this->log_debug("File is accessible: " . $file_path);
 				$curl_file = curl_file_create($file_path, 'audio/mpeg', basename($file_path));
 				$body = array('file' => $curl_file, 'model' => $model);
 
 				$response = $this->make_request('audio/transcriptions', $body, $feed, 'whisper');
-				$this->log_debug("Raw Whisper API response: " . print_r($response, true));
+				// $this->log_debug("Raw Whisper API response: " . print_r($response, true));
 
 				if (is_wp_error($response)) {
 					$this->add_feed_error($response->get_error_message(), $feed, $entry, $form);
@@ -1627,6 +1866,135 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		gform_add_meta($entry['id'], 'whisper_response_' . $feed['id'], $combined_text);
 		return $entry;
 	}
+
+	public function process_endpoint_pronunciation($feed, $entry, $form)
+	{
+		$text_field_id = rgar($feed['meta'], 'pronunciation_reference_text_field');
+		$file_field_id = rgar($feed['meta'], 'pronunciation_audio_file_field');
+		$responses = array();
+		// Get the file URLs from the entry
+		$file_urls = rgar($entry, $file_field_id);
+		$reference_text = rgar($entry, $text_field_id);
+		// $this->log_debug("Text Field ID: " . $text_field_id);
+		// $this->log_debug("File Field ID: " . $file_field_id);
+		// $this->log_debug("File URLs from entry: " . print_r($file_urls, true));
+
+		// Convert file_urls to array if it's a JSON string
+		if (is_string($file_urls)) {
+			$file_urls = json_decode($file_urls, true);
+			// $this->log_debug("Converted file_urls to array: " . print_r($file_urls, true));
+		}
+
+		// Check if file_urls is now an array
+		if (is_array($file_urls)) {
+			foreach ($file_urls as $file_url) {
+				// $this->log_debug("File URL from entry: " . $file_url);
+				$body = array('url' => $file_url, 'reference_text' => $reference_text);
+				// $this->log_debug("Request Data: " . print_r($body, true));
+				$response = $this->make_request('pronunciation', $body, $feed);
+				// $this->log_debug("Raw Pronunciation API response: " . print_r($response, true));
+				if (is_wp_error($response)) {
+					$this->add_feed_error($response->get_error_message(), $feed, $entry, $form);
+				}
+				$response_body = wp_remote_retrieve_body($response);
+				$response_body = $this->parse_event_stream_data($response_body);
+				$pretty_json = json_encode($response_body, JSON_PRETTY_PRINT);
+				$this->log_debug("Pritty JSON: " . print_r($pretty_json, true));
+				$responses[$file_url] = $pretty_json;
+			}
+		} else {
+			$this->log_debug("file_urls is still not an array or is empty after conversion. It is of type: " . gettype($file_urls));
+		}
+
+		if (!empty($responses)) {
+
+			GFAPI::add_note($entry['id'], 0, 'Pronunciation API Responses (' . $feed['meta']['feed_name'] . ')', print_r($responses,true));
+			$entry = $this->maybe_save_result_to_field($feed, $entry, $form, print_r($responses,true));
+		}
+
+		gform_add_meta($entry['id'], 'pronunciation_response_' . $feed['id'], $responses);
+		return $entry;
+
+		return $entry;
+	}
+
+	public function parse_event_stream_data($event_stream_data) {
+		$data_lines = explode("\n", trim($event_stream_data));
+		$data_list = array();
+
+		foreach ($data_lines as $line) {
+			if (strpos($line, 'data: ') === 0) {
+				$json_data = substr($line, strlen('data: '));
+				$data_list[] = json_decode($json_data, true);
+			}
+		}
+
+		return $data_list;
+	}
+
+
+
+
+	public function process_endpoint_languagetool($feed, $entry, $form)
+	{
+		// Prepare Payload
+		$text_field_id = rgar($feed['meta'], 'languagetool_text_source_field');
+		$text = rgar($entry, $text_field_id);
+		$body = array('text' => $text);
+
+		// Send Request
+		$response = $this->make_request('languagetool', $body, $feed);
+		if (is_wp_error($response)) {
+			$this->add_feed_error($response->get_error_message(), $feed, $entry, $form);
+		} else {
+			$response_body = json_decode(wp_remote_retrieve_body($response), true);
+
+			if (json_last_error() !== JSON_ERROR_NONE) {
+				$this->add_feed_error('Error decoding JSON response: ' . json_last_error_msg(), $feed, $entry, $form);
+				return $entry;
+			}
+
+			$this->log_debug("Response: " . print_r($response_body, true));
+			GFAPI::add_note($entry['id'], 0, 'LanguageTool API Response (' . $feed['meta']['feed_name'] . ')', print_r($response_body, true));
+
+			// Convert the response into human-readable format
+			$human_readable_response = $this->convert_to_human_readable($response_body);
+
+			// Save the human-readable response as a note
+			// GFAPI::add_note($entry['id'], 0, 'LanguageTool API Response (Readable) (' . $feed['meta']['feed_name'] . ')', $human_readable_response);
+
+			// Save the raw response
+			gform_add_meta($entry['id'], 'languagetool_response_' . $feed['id'], $response_body);
+
+			// Optionally save the human-readable response in a form field
+			$entry = $this->maybe_save_result_to_field($feed, $entry, $form, $human_readable_response);
+
+			return $entry;
+		}
+	}
+
+	// Helper function to convert API response to human-readable format
+	private function convert_to_human_readable($response_body)
+	{
+		$readable_text = "LanguageTool API found the following issues:\n";
+
+		foreach ($response_body['matches'] as $match) {
+			$message = $match['message'];
+			$context = $match['context']['text'];
+			$offset = $match['context']['offset'];
+			$length = $match['context']['length'];
+			$replacements = array_column($match['replacements'], 'value');
+			$replacements_text = implode(', ', $replacements);
+
+			$readable_text .= "\nIssue: $message\n";
+			$readable_text .= "Context: " . substr($context, 0, $offset) . '[' . substr($context, $offset, $length) . ']' . substr($context, $offset + $length) . "\n";
+			$readable_text .= "Suggested Replacements: $replacements_text\n";
+		}
+
+		return $readable_text;
+	}
+
+
 
 	public function convert_url_to_path($url)
 	{
@@ -1687,11 +2055,14 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		$field = GFAPI::get_field($form, (int) $map_result_to_field);
 
 		if (rgar($field, 'useRichTextEditor')) {
-			$text = wp_kses_post($text);
+			$text = wp_kses_post($text); // Allow only certain HTML tags
 		} else {
-			// br2nl
-			$text = preg_replace('/<br\s?\/?>/ius', "\n", str_replace("\n", '', str_replace("\r", '', htmlspecialchars_decode($text))));
-			$text = wp_strip_all_tags($text);
+			// Convert <br> tags to line breaks
+			if (!is_array($text)) {
+				$text = htmlspecialchars_decode($text); // Decode any HTML entities
+				$text = preg_replace('/<br\s*\/?>/i', "\n", $text); // Convert <br> to \n
+				$text = wp_strip_all_tags($text); // Remove all HTML tags
+			}
 		}
 
 		$entry[$map_result_to_field] = $text;
@@ -2168,25 +2539,39 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 	 */
 	public function make_request($endpoint, $body, $feed)
 	{
+		// Update Method to deal with Language tool API
 		static $request_cache = array();
+		if($endpoint == 'languagetool'){
+			$settings = $this->get_plugin_settings();
+			$api_key = isset($settings['language_tool_apiKey']) ? $settings['language_tool_apiKey'] : '';
+			$api_username = isset($settings['language_tool_username']) ? $settings['language_tool_username'] : '';
+			$api_base = isset($settings['language_tool_base_url']) ? $settings['language_tool_base_url'] : 'https://api.languagetoolplus.com/v2/check';
+			$url = $api_base;
+		}elseif ($endpoint == 'pronunciation') {
+			$settings = $this->get_plugin_settings();
+			$speech_key = isset($settings['pronunciation_speech_key']) ? $settings['pronunciation_speech_key'] : '';
+			$base_url = isset($settings['pronunciation_base_url']) ? $settings['pronunciation_base_url'] : '';
+			$url = $base_url;
+		}else{
+			// Identify the user meber ship or role
+			$primary_role = $this->get_user_primary_identifier();
 
-		// Identify the user meber ship or role
-		$primary_role = $this->get_user_primary_identifier();
+			// Get the saved API base for the user role from the feed settings
+			$option_name = 'api_base_' . $primary_role;
+			$api_base = rgar($feed['meta'], $option_name, 'https://api.openai.com/v1/');
 
-		// Get the saved API base for the user role from the feed settings
-		$option_name = 'api_base_' . $primary_role;
-		$api_base = rgar($feed['meta'], $option_name, 'https://api.openai.com/v1/');
+			$url = $api_base . $endpoint;
 
-		$url = $api_base . $endpoint;
-
-		if ($api_base === 'https://writify.openai.azure.com/openai/deployments/IELTS-Writify/') {
-			$url .= '?api-version=2023-03-15-preview';
+			if ($api_base === 'https://writify.openai.azure.com/openai/deployments/IELTS-Writify/') {
+				$url .= '?api-version=2023-03-15-preview';
+			}
 		}
 
 		$cache_body = $body;
 		if (isset($cache_body['file']) && $cache_body['file'] instanceof CURLFile) {
 			unset($cache_body['file']); // Exclude the CURLFile object
 		}
+
 		$cache_key = sha1(
 			serialize(
 				array(
@@ -2203,8 +2588,8 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		}
 
 		$transient = 'gform_openai_cache_' . $cache_key;
-		$use_cache = gf_apply_filters(array('gf_openai_cache_responses', $feed['form_id'], $feed['id']), true, $feed['form_id'], $feed, $endpoint, $body);
-
+		// $use_cache = gf_apply_filters(array('gf_openai_cache_responses', $feed['form_id'], $feed['id']), true, $feed['form_id'], $feed, $endpoint, $body);
+		$use_cache = false;
 		if ($use_cache && get_transient($transient)) {
 			return get_transient($transient);
 		}
@@ -2265,6 +2650,14 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 			return $response_data;
 		}
 
+		if ($endpoint === 'pronunciation') {
+			// Special handling for Language Tool API
+			$settings = $this->get_plugin_settings();
+			$speech_key = isset($settings['pronunciation_speech_key']) ? $settings['pronunciation_speech_key'] : '';
+			$base_url = isset($settings['pronunciation_base_url']) ? $settings['pronunciation_base_url'] : '';
+			$url = $base_url;
+		}
+
 		switch ($endpoint) {
 			case 'completions':
 				$body['max_tokens'] = (float) rgar($feed['meta'], $endpoint . '_' . 'max_tokens', $this->default_settings['completions']['max_tokens']);
@@ -2286,20 +2679,70 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 				$body['temperature'] = (float) rgar($feed['meta'], $endpoint . '_' . 'temperature', $this->default_settings['edits']['temperature']);
 				$body['top_p'] = (float) rgar($feed['meta'], $endpoint . '_' . 'top_p', $this->default_settings['edits']['top_p']);
 				break;
-		}
+			case 'languagetool':
+				$body['language'] = rgar($feed['meta'], 'languagetool__language', 'en-US');
+				$body['apiKey'] = $api_key;
+				$body['username'] = $api_username;
+				$body['enabledOnly'] = rgar($feed['meta'], 'languagetool__enabled_only', 'false');
+				$body['disabledCategories'] = rgar($feed['meta'], 'languagetool__disabled_categories', 'PUNCTUATION,CASING,TYPOGRAPHY');
+				$body['level'] = rgar($feed['meta'], 'languagetool__level', 'picky');
 
+				// Language tool API Requires the Data to be in 'application/x-www-form-urlencoded' format
+				$args = array(
+					'body'        => http_build_query($body), // Automatically converts array to URL-encoded format
+					'headers'     => array(
+						'Content-Type' => 'application/x-www-form-urlencoded',
+						'Accept'       => 'application/json',
+					),
+					'method'      => 'POST',
+				);
+				// $this->log_debug("Request Args:  " . print_r($args, true));
+				// Perform the request
+				$response = wp_remote_post($url, $args);
+				// $this->log_debug("Languagetool API Payload: " . print_r($body, true));
+				// $this->log_debug("Languagetool API Response: " . print_r($response, true));
+				break;
+			case 'pronunciation':
+				$body['url'] = 'https://beta.ieltsscience.fun/wp-content/uploads/2024/07/Speaking-Ho-Thi-Xuan-Huong-2.mp3'; //Temporary Server URL
+				$body['grading_system'] = rgar($feed['meta'], 'pronunciation_grading_system', 'HundredMark');
+				$body['granularity'] = rgar($feed['meta'], 'pronunciation_granularity', 'Phoneme');
+				$body['dimension'] = rgar($feed['meta'], 'pronunciation_dimension', 'Comprehensive');
+				$body['enable_prosody'] = rgar($feed['meta'], 'pronunciation_enable_prosody', 'true');
+
+				// Special Request Headers for Pronunciation API
+				$args = array(
+					'body'        => http_build_query($body),
+					'headers'     => array(
+						'Content-Type' => 'application/x-www-form-urlencoded',
+						'Accept'       => 'application/json',
+						'speech-key'   => $speech_key,
+						'service-region' => 'eastus',
+
+					),
+					'method'      => 'POST',
+					'timeout'     => 60,
+				);
+				// $this->log_debug("Request Args:  " . print_r($args, true));
+				// Perform the request
+				$response = wp_remote_post($url, $args);
+				// $this->log_debug("Pronunciation API Payload: " . print_r($body, true));
+				// $this->log_debug("Pronunciation API Response: " . print_r($response, true));
+				break;
+		}
 		$body = apply_filters('gf_openai_request_body', $body, $endpoint, $feed);
 
-		// Cache successful responses.
-		$response = wp_remote_post(
-			$url,
-			array_merge(
-				array(
-					'body' => json_encode($body),
-				),
-				$this->get_request_params($feed)
-			)
-		);
+		if ($endpoint !== 'languagetool' && $endpoint !== 'pronunciation') {
+			$body = apply_filters('gf_openai_request_body', $body, $endpoint, $feed);
+			$response = wp_remote_post(
+				$url,
+				array_merge(
+					array(
+						'body' => json_encode($body),
+					),
+					$this->get_request_params($feed)
+				)
+			);
+		}
 
 		if (is_wp_error($response)) {
 			return $response;
@@ -2352,8 +2795,8 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		$secret_key_index = $this->getBestSecretKey();
 
 		// Log the retrieved settings and secret key
-		$this->log_debug("Settings: " . print_r($settings, true));
-		$this->log_debug("Selected Secret Key: " . $secret_key_index);
+		// $this->log_debug("Settings: " . print_r($settings, true));
+		// $this->log_debug("Selected Secret Key: " . $secret_key_index);
 
 		$organization = $settings["organization_$secret_key_index"];
 
@@ -2375,7 +2818,7 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		}
 
 		// Log the constructed headers
-		$this->log_debug("Headers: " . print_r($headers, true));
+		// $this->log_debug("Headers: " . print_r($headers, true));
 
 		return $headers;
 	}
