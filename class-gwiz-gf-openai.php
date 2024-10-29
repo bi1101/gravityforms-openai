@@ -677,6 +677,7 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 
 	public function feed_settings_fields()
 	{
+		$editable_roles = get_editable_roles();
 		// Start with the general settings
 		$general_fields = array(
 			array(
@@ -728,6 +729,13 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 				'label' => __('Select File Upload Field', 'gravityforms-openai'),
 				'description' => __('Choose the file upload field to use for Whisper API.', 'gravityforms-openai'),
 				// Other properties as needed
+			),
+			array(
+				'name' => 'whisper_prompt',
+				'type' => 'text',
+				'label' => __('Whisper Prompt to finetune the output', 'gravityforms-openai'),
+				'description' => __('Write a Whisper Prompt to Finetune the Output', 'gravityforms-openai'),
+				'default' => "I'm, uh, is a, you know, Vietnamese ESL student. So, like, uhm, I may make some mistake in my grammar."
 			),
 			$this->feed_setting_map_result_to_field('whisper')
 			// Add other settings as needed
@@ -848,8 +856,111 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 				'description' => __('Choose the file upload field to use for the audio file(s).', 'gravityforms-openai'),
 
 			),
+			array(
+				'name' => 'fluency_errors_field',
+				'type' => 'field_select',
+				'label' => __('Select a Field to Save Fluency Errors', 'gravityforms-openai'),
+
+			),
 			$this->feed_setting_map_result_to_field('pronunciation'),
 		);
+
+		if(class_exists('GP_Limit_Submissions')){ // add Extra Limit Submission Fields if Limit Submission Plugin in installed
+			$GP_Limit_Submissions = new GP_Limit_Submissions();
+			foreach ($editable_roles as $role => $details) {
+				$pronunciation_fields[] = array(
+					'label'    => __( "Submission Limit for Role: $role", 'gp-limit-submissions' ),
+					'type'     => 'text',
+					'class'    => 'small', /* Not needed in GF 2.5+ */
+					'name'     => "rule_submission_limit_$role",
+					'tooltip'  => __( 'Specify the number of entries that may be submitted if this limit feed applies.', 'gp-limit-submissions' ),
+					'style'    => 'width:auto;',
+				);
+				$pronunciation_fields[] = array(
+					'label'   => __( 'Time Period', 'gp-limit-submissions' ),
+					'type'    => 'select',
+					'name'    => "rule_limit_time_period_$role",
+					'tooltip' => $GP_Limit_Submissions->get_time_period_setting_description(),
+					'choices' => array(
+						array(
+							'label' => __( 'Forever', 'gp-limit-submissions' ),
+							'value' => 'forever',
+						),
+						array(
+							'label' => __( 'Time Period', 'gp-limit-submissions' ),
+							'value' => 'time_period',
+						),
+						array(
+							'label' => __( 'Calendar Period', 'gp-limit-submissions' ),
+							'value' => 'calendar_period',
+						)
+					),
+					'class' => 'gf_left_half',  // CSS class to display this field in the left half of the line
+				);
+
+				$pronunciation_fields[] = array(
+					'label'   => __( 'Time Period Value', 'gp-limit-submissions' ),
+					'type'    => 'text',
+					'name'    => "rule_time_period_value_$role",
+					'tooltip' => __( 'Enter the time period value', 'gp-limit-submissions' ),
+					'placeholder' => __( 'Enter a number (i.e. 3)', 'gp-limit-submissions' ),
+					'class' => 'gf_right_half', // CSS class to display this field in the right half of the line
+					'dependency' => array(
+						'live' => true,
+						'fields' => array(
+							array(
+								'field' => "rule_limit_time_period_$role",
+								'values' => array( 'time_period' ),
+							),
+						),
+					),
+				);
+
+				$pronunciation_fields[] = array(
+					'label'   => __( 'Time Period Unit', 'gp-limit-submissions' ),
+					'type'    => 'select',
+					'name'    => "rule_time_period_unit_$role",
+					'tooltip' => __( 'Select time period unit', 'gp-limit-submissions' ),
+					'choices' => array(
+						array( 'label' => __( 'seconds', 'gp-limit-submissions' ), 'value' => 'seconds' ),
+						array( 'label' => __( 'minutes', 'gp-limit-submissions' ), 'value' => 'minutes' ),
+						array( 'label' => __( 'hours', 'gp-limit-submissions' ), 'value' => 'hours' ),
+						array( 'label' => __( 'days', 'gp-limit-submissions' ), 'value' => 'days' ),
+						array( 'label' => __( 'weeks', 'gp-limit-submissions' ), 'value' => 'weeks' ),
+						array( 'label' => __( 'months', 'gp-limit-submissions' ), 'value' => 'months' ),
+						array( 'label' => __( 'years', 'gp-limit-submissions' ), 'value' => 'years' ),
+					),
+					'class' => 'gf_left_half',  // Display the field inline (left half)
+					'dependency' => array(
+						'live' => true,
+						'fields' => array(
+							array(
+								'field' => "rule_limit_time_period_$role",
+								'values' => array( 'time_period' ),
+							),
+						),
+					),
+				);
+
+				$pronunciation_fields[] = array(
+					'label'   => __( 'Calendar Period', 'gp-limit-submissions' ),
+					'type'    => 'select',
+					'name'    => "rule_calendar_period_$role",
+					'tooltip' => __( 'Enter the calendar period', 'gp-limit-submissions' ),
+					'choices' => array_values( GPLS_RuleTest::get_calendar_periods() ),
+					'class' => 'gf_right_half',  // Display the field inline (right half)
+					'dependency' => array(
+						'live' => true,
+						'fields' => array(
+							array(
+								'field' => "rule_limit_time_period_$role",
+								'values' => array( 'calendar_period' ),
+							),
+						),
+					),
+				);
+			}
+		}
 
 		// Create a new section for API Provider
 		$api_provider_fields = array();
@@ -876,7 +987,6 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 
 		// Fallback to roles if no memberships are available
 		if (empty($items_to_check)) {
-			$editable_roles = get_editable_roles();
 			foreach ($editable_roles as $role => $details) {
 				$items_to_check[] = array(
 					'type' => 'role',
@@ -934,6 +1044,11 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 						'value' => 'http://api3.ieltsscience.fun/v1/',
 						'label' => __('Home API Llama-3-8b-instruct', 'gravityforms-openai'),
 						'tooltip' => 'API Provider: https://api3.ieltsscience.fun/v1/'
+					),
+					array(
+						'value' => 'https://open.keyai.shop/v1/',
+						'label' => __('Keyai Open AI API', 'gravityforms-openai'),
+						'tooltip' => 'API Provider: https://open.keyai.shop/v1/'
 					),
 				),
 				'default_value' => 'https://api2.ieltsscience.fun/v1/',
@@ -1085,6 +1200,18 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 							),
 							'default_value' => 'Yes',
 							'tooltip' => 'Select whether to stream the chat completions to the front end.',
+						),
+						array(
+							'name' => 'request_is_for_scores',
+							'label' => 'Is This Request Get Scores From Open AI?',
+							'type' => 'radio',
+							'choices' => array(
+								array('label' => 'No', 'value' => 'no'),
+								array('label' => 'Grammer Score', 'value' => 'grammer_scores'),
+								array('label' => 'Vocab Score', 'value' => 'vocab_scores')
+							),
+							'default_value' => 'no',
+							'tooltip' => 'Select If The Chat Completions Request is For Getting Scores',
 						),
 						$this->feed_setting_enable_merge_tag('chat/completions'),
 						$this->feed_setting_map_result_to_field('chat/completions'),
@@ -1836,10 +1963,16 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 			if (is_readable($file_path)) {
 				// $this->log_debug("File is accessible: " . $file_path);
 				$curl_file = curl_file_create($file_path, 'audio/mpeg', basename($file_path));
-				$body = array('file' => $curl_file, 'model' => $model);
+				$body = array(
+					'file' => $curl_file,
+					 'model' => $model,
+					 'response_format' => 'verbose_json',
+                    'timestamp_granularities' => ['word']
+					);
 
+				$this->log_debug("Whisper Request Body: " . print_r($body, true));
 				$response = $this->make_request('audio/transcriptions', $body, $feed, 'whisper');
-				// $this->log_debug("Raw Whisper API response: " . print_r($response, true));
+				$this->log_debug("Raw Whisper API response: " . print_r($response, true));
 
 				if (is_wp_error($response)) {
 					$this->add_feed_error($response->get_error_message(), $feed, $entry, $form);
@@ -2599,7 +2732,7 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 		// Adjust request for Whisper API
 		if ($endpoint === 'audio/transcriptions') {
 			// Special handling for Whisper API
-			$url = 'https://api.openai.com/v1/' . $endpoint; // Direct URL for Whisper API
+			$url = 'https://api3.ieltsscience.fun/v1/' . $endpoint; // Direct URL for Whisper API
 
 			$settings = $this->get_plugin_settings();
 			$secret_key_index = $this->getBestSecretKey();
@@ -2695,6 +2828,7 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 						'Accept'       => 'application/json',
 					),
 					'method'      => 'POST',
+					'timeout'     => 10000,
 				);
 				// $this->log_debug("Request Args:  " . print_r($args, true));
 				// Perform the request
@@ -2703,7 +2837,7 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 				// $this->log_debug("Languagetool API Response: " . print_r($response, true));
 				break;
 			case 'pronunciation':
-				$body['url'] = 'https://beta.ieltsscience.fun/wp-content/uploads/2024/07/Speaking-Ho-Thi-Xuan-Huong-2.mp3'; //Temporary Server URL
+				// $body['url'] = 'https://beta.ieltsscience.fun/wp-content/uploads/2024/09/Describe-a-party-that-you-enjoyed-1716823970096.mp3'; //Temporary Server URL
 				$body['grading_system'] = rgar($feed['meta'], 'pronunciation_grading_system', 'HundredMark');
 				$body['granularity'] = rgar($feed['meta'], 'pronunciation_granularity', 'Phoneme');
 				$body['dimension'] = rgar($feed['meta'], 'pronunciation_dimension', 'Comprehensive');
@@ -2720,13 +2854,9 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 
 					),
 					'method'      => 'POST',
-					'timeout'     => 60,
+					'timeout'     => 1600,
 				);
-				// $this->log_debug("Request Args:  " . print_r($args, true));
-				// Perform the request
 				$response = wp_remote_post($url, $args);
-				// $this->log_debug("Pronunciation API Payload: " . print_r($body, true));
-				// $this->log_debug("Pronunciation API Response: " . print_r($response, true));
 				break;
 		}
 		$body = apply_filters('gf_openai_request_body', $body, $endpoint, $feed);
