@@ -1196,23 +1196,26 @@ class GWiz_GF_OpenAI extends GFFeedAddOn
 								array('label' => 'As Feedback', 'value' => 'yes'),
 								array('label' => 'No', 'value' => 'no'),
 								array('label' => 'As the answer', 'value' => 'text'),
-								array('label' => 'As the question', 'value' => 'question')
+								array('label' => 'As the question', 'value' => 'question'),
+								array('label' => 'As the Vocab Score', 'value' => 'vocab_scores'),
+								array('label' => 'As the Grammer Score', 'value' => 'grammer_scores'),
+								array('label' => 'As the Improved Answer', 'value' => 'improved_answer')
 							),
 							'default_value' => 'Yes',
 							'tooltip' => 'Select whether to stream the chat completions to the front end.',
 						),
-						array(
-							'name' => 'request_is_for_scores',
-							'label' => 'Is This Request Get Scores From Open AI?',
-							'type' => 'radio',
-							'choices' => array(
-								array('label' => 'No', 'value' => 'no'),
-								array('label' => 'Grammer Score', 'value' => 'grammer_scores'),
-								array('label' => 'Vocab Score', 'value' => 'vocab_scores')
-							),
-							'default_value' => 'no',
-							'tooltip' => 'Select If The Chat Completions Request is For Getting Scores',
-						),
+						// array(
+						// 	'name' => 'request_is_for_scores',
+						// 	'label' => 'Is This Request Get Scores From Open AI?',
+						// 	'type' => 'radio',
+						// 	'choices' => array(
+						// 		array('label' => 'No', 'value' => 'no'),
+						// 		array('label' => 'Grammer Score', 'value' => 'grammer_scores'),
+						// 		array('label' => 'Vocab Score', 'value' => 'vocab_scores')
+						// 	),
+						// 	'default_value' => 'no',
+						// 	'tooltip' => 'Select If The Chat Completions Request is For Getting Scores',
+						// ),
 						$this->feed_setting_enable_merge_tag('chat/completions'),
 						$this->feed_setting_map_result_to_field('chat/completions'),
 					)
